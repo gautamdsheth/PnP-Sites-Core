@@ -181,3 +181,7 @@ FakesAssemblies/
 
 # VS Code Settings
 .vscode/
+Core/PnPProvisioningConsole/packages.config
+Core/PnPProvisioningConsole/PnPProvisioningConsole.csproj
+Core/PnPProvisioningConsole/Program.cs
+Core/PnPProvisioningConsole/Properties/AssemblyInfo.cs

@@ -221,7 +221,10 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
                     var siteUrls = new Dictionary<Guid, string>();
 
                     TokenParser siteTokenParser = null;
-
+                    
+                    var themes = tenant.GetAllTenantThemes();
+                    tenant.Context.Load(themes);
+                    tenant.Context.ExecuteQueryRetry();
 
                     foreach (var sitecollection in sequence.SiteCollections)
                     {
@@ -264,8 +267,15 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
                                     if (!string.IsNullOrEmpty(t.Theme))
                                     {
                                         var parsedTheme = tokenParser.ParseString(t.Theme);
-                                        tenant.SetWebTheme(parsedTheme, siteContext.Url);
-                                        tenant.Context.ExecuteQueryRetry();
+                                        if (themes.FirstOrDefault(th => th.Name == parsedTheme) != null)
+                                        {
+                                            tenant.SetWebTheme(parsedTheme, siteContext.Url);
+                                            tenant.Context.ExecuteQueryRetry();
+                                        }
+                                        else
+                                        {
+                                            WriteMessage($"Theme {parsedTheme} doesn't exist in the tenant, will not be applied", ProvisioningMessageType.Warning);
+                                        }
                                     }
                                     if (t.Teamify)
                                     {
@@ -362,9 +372,16 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
                                     }
                                     if (!string.IsNullOrEmpty(c.Theme))
                                     {
-                                        var parsedTheme = tokenParser.ParseString(c.Theme);
-                                        tenant.SetWebTheme(parsedTheme, siteInfo.Url);
-                                        tenant.Context.ExecuteQueryRetry();
+                                        var parsedTheme = tokenParser.ParseString(c.Theme);                                        
+                                        if (themes.FirstOrDefault(th => th.Name == parsedTheme) != null)
+                                        {
+                                            tenant.SetWebTheme(parsedTheme, siteInfo.Url);
+                                            tenant.Context.ExecuteQueryRetry();
+                                        }
+                                        else
+                                        {
+                                            WriteMessage($"Theme {parsedTheme} doesn't exist in the tenant, will not be applied", ProvisioningMessageType.Warning);
+                                        }                                        
                                     }
                                     siteUrls.Add(c.Id, siteInfo.Url);
                                     if (!string.IsNullOrEmpty(c.ProvisioningId))
@@ -414,8 +431,15 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
                                     if (!string.IsNullOrEmpty(t.Theme))
                                     {
                                         var parsedTheme = tokenParser.ParseString(t.Theme);
-                                        tenant.SetWebTheme(parsedTheme, siteContext.Url);
-                                        tenant.Context.ExecuteQueryRetry();
+                                        if (themes.FirstOrDefault(th => th.Name == parsedTheme) != null)
+                                        {
+                                            tenant.SetWebTheme(parsedTheme, siteContext.Url);
+                                            tenant.Context.ExecuteQueryRetry();
+                                        }
+                                        else
+                                        {
+                                            WriteMessage($"Theme {parsedTheme} doesn't exist in the tenant, will not be applied", ProvisioningMessageType.Warning);
+                                        }
                                     }
                                     siteUrls.Add(t.Id, siteContext.Url);
                                     if (!string.IsNullOrEmpty(t.ProvisioningId))
