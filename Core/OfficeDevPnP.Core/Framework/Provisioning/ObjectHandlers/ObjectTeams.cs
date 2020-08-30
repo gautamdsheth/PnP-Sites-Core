@@ -140,11 +140,29 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
             }
         }
 
-        private static string[] GetAllIdsForAllGroupsWithTeams(string accessToken)
+        private static string[] GetAllIdsForAllGroupsWithTeams(string accessToken, List<string> groupIdCollection, string nextPageUrl)
         {
-            var groupids = HttpHelper.MakeGetRequestForString($"{GraphHelper.MicrosoftGraphBaseURI}beta/groups?$filter=resourceProvisioningOptions/Any(x:x eq 'Team')&$select=Id", accessToken);
-            var value = JObject.Parse(groupids).Value<JArray>("value");
-            return value.Select(t => t.Value<string>("id")).ToArray();
+            if (groupIdCollection == null) groupIdCollection = new List<string>();
+
+            string requestUrl = nextPageUrl ?? $"{GraphHelper.MicrosoftGraphBaseURI}beta/groups?$filter=resourceProvisioningOptions/Any(x:x eq 'Team')&$select=Id";
+
+            string groupIds = HttpHelper.MakeGetRequestForString(requestUrl, accessToken);
+
+            var value = JObject.Parse(groupIds).Value<JArray>("value");
+
+            string nextPageUrlValue = JObject.Parse(groupIds).Value<string>("@odata.nextLink");
+
+            if (groupIdCollection.Count() == 0)
+            {
+                groupIdCollection = value.Select(t => t.Value<string>("id")).ToList();
+            }
+            else
+            {
+                var nextPageData = value.Select(t => t.Value<string>("id")).ToList();
+                groupIdCollection.AddRange(nextPageData);
+            }
+
+            return !string.IsNullOrEmpty(nextPageUrlValue) ? GetAllIdsForAllGroupsWithTeams(accessToken, groupIdCollection, nextPageUrlValue) : groupIdCollection.ToArray();
         }
 
         /// <summary>
@@ -1355,7 +1373,7 @@ namespace OfficeDevPnP.Core.Framework.Provisioning.ObjectHandlers
                     {
                         // Retrieve all groups with teams
 
-                        var groupIds = GetAllIdsForAllGroupsWithTeams(accessToken);
+                        var groupIds = GetAllIdsForAllGroupsWithTeams(accessToken, null, null);
                         foreach (var groupId in groupIds)
                         {
                             Team team = ParseTeamJson(configuration, accessToken, groupId, scope);
